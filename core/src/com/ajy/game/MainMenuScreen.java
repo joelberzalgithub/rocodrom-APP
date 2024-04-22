@@ -12,6 +12,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
+import java.io.File;
+
 public class MainMenuScreen implements Screen {
 	final Roscodrom game;
 	OrthographicCamera camera;
@@ -22,11 +24,11 @@ public class MainMenuScreen implements Screen {
 	public MainMenuScreen(final Roscodrom game) {
 		this.game = game;
 		background = new Texture(Gdx.files.internal("backgroundMenu.jpg"));
+		skin = new Skin(Gdx.files.internal("uiskin.json"));
 		camera = new OrthographicCamera();
 		camera.setToOrtho(false, 450, 800);
 		stage = new Stage(new FitViewport(450, 800, camera));
 		Gdx.input.setInputProcessor(stage);
-		skin = new Skin(Gdx.files.internal("uiskin.json"));
 	}
 
 	@Override
@@ -67,8 +69,13 @@ public class MainMenuScreen implements Screen {
 		multiplayerBtn.addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-				game.setScreen(new MultiPlayerScreen(game));
-				dispose();
+				if (new File("profile.json").exists()) {
+					game.setScreen(new MultiPlayerScreen(game));
+					dispose();
+				} else {
+					game.setScreen(new ProfileScreen(game));
+					dispose();
+				}
 			}
 		});
 
