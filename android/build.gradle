@@ -19,7 +19,7 @@ android {
     }
     defaultConfig {
         applicationId "com.ajy.game"
-        minSdkVersion 19
+        minSdkVersion 34
         targetSdkVersion 34
         versionCode 1
         versionName "1.0"

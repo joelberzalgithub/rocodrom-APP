@@ -1,10 +1,11 @@
 package com.ajy.game;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Net;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.PixmapIO;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -16,25 +17,21 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.Net;
 import com.badlogic.gdx.Net.HttpMethods;
 import com.badlogic.gdx.Net.HttpRequest;
 import com.badlogic.gdx.Net.HttpResponse;
 import com.badlogic.gdx.Net.HttpResponseListener;
-import com.badlogic.gdx.utils.Json;
-import com.badlogic.gdx.utils.JsonValue;
-import com.badlogic.gdx.utils.JsonWriter;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.utils.Base64Coder;
 
-import java.util.HashMap;
+import java.util.Base64;
 
 public class ProfileScreen implements Screen {
     final Roscodrom game;
     OrthographicCamera camera;
     Texture background;
     Stage stage;
-    
     Skin skin;
     ImageButton iconButton;
     Texture[] iconTextures;
@@ -48,7 +45,7 @@ public class ProfileScreen implements Screen {
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 389, 800);
         currentIconIndex = 0;
-        stage = new Stage(new ScreenViewport());
+        stage = new Stage(new ScreenViewport()) /*new Stage(new FitViewport(389, 800, camera));*/;
         Gdx.input.setInputProcessor(stage);
     }
 
@@ -59,9 +56,22 @@ public class ProfileScreen implements Screen {
         iconButton.getStyle().imageUp = new TextureRegionDrawable(new TextureRegion(iconTextures[currentIconIndex]));
     }
 
+    private String avatarToBase64() {
+        Texture icon = iconTextures[currentIconIndex];
+        Pixmap pixmap = new Pixmap(icon.getWidth(), icon.getHeight(), Pixmap.Format.RGBA8888);
+        FileHandle file = FileHandle.tempFile("tempAvatar");
+        try {
+            PixmapIO.writePNG(file, pixmap);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        pixmap.dispose();
+        byte[] imgBytes = file.readBytes();
+        return Base64Coder.encodeLines(imgBytes);
+    }
+
     @Override
     public void show() {
-        /*
         // Carreguem les textures de les icones
         iconTextures = new Texture[] {
                 new Texture(Gdx.files.internal("icon1.png")),
@@ -69,10 +79,11 @@ public class ProfileScreen implements Screen {
                 new Texture(Gdx.files.internal("icon3.png")),
                 new Texture(Gdx.files.internal("icon4.png"))
         };
+
         // Creem un IconButton a partir de la llista de textures de les icones
         Drawable iconDrawable = new TextureRegionDrawable(new TextureRegion(iconTextures[currentIconIndex]));
         iconButton = new ImageButton(iconDrawable);
-        iconButton.setPosition(50, 50);
+        iconButton.setPosition(375, 1600);
 
         // Quan l'usuari prem l'IconButton, les icones es van alternant
         iconButton.addListener(new ClickListener() {
@@ -81,7 +92,6 @@ public class ProfileScreen implements Screen {
                 cycleIcon();
             }
         });
-        */
 
         TextField nameField = new TextField("Nickname", skin);
         nameField.setHeight(150);
@@ -107,9 +117,7 @@ public class ProfileScreen implements Screen {
         saveBtn.setWidth(575);
 
         // Comprovem que tots els TextFields continguin text
-        if ((!nameField.getText().isEmpty() || !nameField.getText().isBlank())
-                && (!emailField.getText().isEmpty() || !emailField.getText().isBlank())
-                && (!tfnField.getText().isEmpty() || !tfnField.getText().isBlank())) {
+        if (!nameField.getText().isEmpty() && !emailField.getText().isEmpty()  && !tfnField.getText().isEmpty()) {
             saveBtn.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -117,16 +125,34 @@ public class ProfileScreen implements Screen {
                     String name = nameField.getText();
                     String email = emailField.getText();
                     String tfn = tfnField.getText();
+                    String avatar = null;
+
+                    Texture icon = iconTextures[currentIconIndex];
+                    Pixmap pixmap = new Pixmap(icon.getWidth(), icon.getHeight(), Pixmap.Format.RGBA4444);
+                    FileHandle file = FileHandle.tempFile("tempAvatar");
+                    try {
+                        PixmapIO.writePNG(file, pixmap);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    pixmap.dispose();
+                    byte[] imgBytes = file.readBytes();
+                    Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+                    avatar = encoder.encodeToString(imgBytes);
 
                     // Creem el cos de la petició
                     String requestBody = "{" +
                                             "\"nickname\": \"[NICKNAME]\", " +
                                             "\"email\": \"[EMAIL]\", " +
-                                            "\"phoneNumber\": \"[PHONENUMBER]\"" +
+                                            "\"phoneNumber\": \"[PHONENUMBER]\", " +
+                                            "\"avatar\": \"[AVATAR]\"" +
                                          "}";
                     requestBody = requestBody.replace("[NICKNAME]", name);
                     requestBody = requestBody.replace("[EMAIL]", email);
                     requestBody = requestBody.replace("[PHONENUMBER]", tfn);
+                    requestBody = requestBody.replace("[AVATAR]", avatar);
+                    System.out.println(requestBody);
 
                     // Creem una petició HTTP
                     HttpRequest httpRequest = new HttpRequest(HttpMethods.POST);
@@ -149,7 +175,7 @@ public class ProfileScreen implements Screen {
                         }
                         @Override
                         public void failed(Throwable t) {
-                            t.printStackTrace();
+                            System.out.println("Request failed: " + t);
                         }
                         @Override
                         public void cancelled() {
@@ -160,7 +186,7 @@ public class ProfileScreen implements Screen {
             });
         }
 
-        // stage.addActor(iconButton);
+        stage.addActor(iconButton);
         stage.addActor(nameField);
         stage.addActor(emailField);
         stage.addActor(tfnField);
