@@ -1,6 +1,7 @@
 package com.ajy.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Net;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -15,17 +16,25 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.Net;
+import com.badlogic.gdx.Net.HttpMethods;
+import com.badlogic.gdx.Net.HttpRequest;
+import com.badlogic.gdx.Net.HttpResponse;
+import com.badlogic.gdx.Net.HttpResponseListener;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.JsonWriter;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
+import java.util.HashMap;
+
 public class ProfileScreen implements Screen {
     final Roscodrom game;
     OrthographicCamera camera;
     Texture background;
     Stage stage;
+    
     Skin skin;
     ImageButton iconButton;
     Texture[] iconTextures;
@@ -97,7 +106,6 @@ public class ProfileScreen implements Screen {
         saveBtn.setHeight(250);
         saveBtn.setWidth(575);
 
-        /*
         // Comprovem que tots els TextFields continguin text
         if ((!nameField.getText().isEmpty() || !nameField.getText().isBlank())
                 && (!emailField.getText().isEmpty() || !emailField.getText().isBlank())
@@ -105,27 +113,52 @@ public class ProfileScreen implements Screen {
             saveBtn.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
-                    // Creem un objecte JSON i el populem amb la informació de l'usuari
-                    Json json = new Json();
-                    json.setOutputType(JsonWriter.OutputType.json);
+                    // Obtenim els valors del camps de text
+                    String name = nameField.getText();
+                    String email = emailField.getText();
+                    String tfn = tfnField.getText();
 
-                    // Creem un objecte JSON per contenit la informació de l'usuari
-                    JsonValue profileJson = new JsonValue(JsonValue.ValueType.object);
-                    profileJson.addChild("name", new JsonValue(nameField.getText()));
-                    profileJson.addChild("email", new JsonValue(emailField.getText()));
-                    profileJson.addChild("tfn", new JsonValue(tfnField.getText()));
+                    // Creem el cos de la petició
+                    String requestBody = "{" +
+                                            "\"nickname\": \"[NICKNAME]\", " +
+                                            "\"email\": \"[EMAIL]\", " +
+                                            "\"phoneNumber\": \"[PHONENUMBER]\"" +
+                                         "}";
+                    requestBody = requestBody.replace("[NICKNAME]", name);
+                    requestBody = requestBody.replace("[EMAIL]", email);
+                    requestBody = requestBody.replace("[PHONENUMBER]", tfn);
 
-                    // Inserim les dades del JSON a un arxiu
-                    FileHandle file = Gdx.files.local("profile.json");
-                    file.writeString(json.prettyPrint(profileJson), false);
+                    // Creem una petició HTTP
+                    HttpRequest httpRequest = new HttpRequest(HttpMethods.POST);
+                    httpRequest.setUrl("https://roscodrom5.ieti.site/api/user/register");
+                    httpRequest.setHeader("Content-Type", "application/json");
+                    httpRequest.setContent(requestBody);
 
-                    // Tornem a la pantalla d'inici
-                    game.setScreen(new MainMenuScreen(game));
-                    // dispose();
+                    // Enviem la petició
+                    Gdx.net.sendHttpRequest(httpRequest, new HttpResponseListener() {
+                        @Override
+                        public void handleHttpResponse(HttpResponse httpResponse) {
+                            // Comprovem si la petició s'ha enregistat amb éxit
+                            int statusCode = httpResponse.getStatus().getStatusCode();
+                            if (statusCode == 200) {
+                                game.setScreen(new MainMenuScreen(game));
+                                dispose();
+                            } else {
+                                System.out.println("Error registering user: " + httpResponse.getResultAsString());
+                            }
+                        }
+                        @Override
+                        public void failed(Throwable t) {
+                            t.printStackTrace();
+                        }
+                        @Override
+                        public void cancelled() {
+                            System.out.println("Request cancelled");
+                        }
+                    });
                 }
             });
         }
-        */
 
         // stage.addActor(iconButton);
         stage.addActor(nameField);
