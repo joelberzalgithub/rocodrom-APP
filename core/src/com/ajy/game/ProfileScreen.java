@@ -22,38 +22,32 @@ import com.badlogic.gdx.Net.HttpRequest;
 import com.badlogic.gdx.Net.HttpResponse;
 import com.badlogic.gdx.Net.HttpResponseListener;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.Base64Coder;
 
+import java.io.File;
 import java.util.Base64;
 
 public class ProfileScreen implements Screen {
     final Roscodrom game;
-    OrthographicCamera camera;
+    final Skin skin;
+    final OrthographicCamera camera;
     Texture background;
     Stage stage;
-    Skin skin;
-    ImageButton iconButton;
     Texture[] iconTextures;
     int currentIconIndex;
+    String requestBody;
 
-    public ProfileScreen(final Roscodrom game) {
+    public ProfileScreen(final Roscodrom game, final Skin skin, final OrthographicCamera camera) {
         this.game = game;
         this.game.font.getData().setScale(2.75f);
+        this.skin = skin;
+        this.camera = camera;
+        this.camera.setToOrtho(false, 389, 800);
         background = new Texture(Gdx.files.internal("backgroundGame.jpg"));
-        skin = new Skin(Gdx.files.internal("uiskin.json"));
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false, 389, 800);
-        currentIconIndex = 0;
-        stage = new Stage(new ScreenViewport()) /*new Stage(new FitViewport(389, 800, camera));*/;
+        stage = new Stage(new FitViewport(389, 800, camera));
         Gdx.input.setInputProcessor(stage);
-    }
-
-    private void cycleIcon() {
-        // Augmentem l'índex i, si cal, l'enrotllem
-        currentIconIndex = (currentIconIndex + 1) % iconTextures.length;
-        // Actualitzem la textura de l'icona
-        iconButton.getStyle().imageUp = new TextureRegionDrawable(new TextureRegion(iconTextures[currentIconIndex]));
+        currentIconIndex = 0;
     }
 
     private String avatarToBase64() {
@@ -82,39 +76,52 @@ public class ProfileScreen implements Screen {
 
         // Creem un IconButton a partir de la llista de textures de les icones
         Drawable iconDrawable = new TextureRegionDrawable(new TextureRegion(iconTextures[currentIconIndex]));
-        iconButton = new ImageButton(iconDrawable);
-        iconButton.setPosition(375, 1600);
+        ImageButton iconBtn = new ImageButton(iconDrawable);
+        iconBtn.setPosition(105, 440);
 
         // Quan l'usuari prem l'IconButton, les icones es van alternant
-        iconButton.addListener(new ClickListener() {
+        iconBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                cycleIcon();
+                // Augmentem l'índex i, si cal, l'enrotllem
+                currentIconIndex = (currentIconIndex + 1) % iconTextures.length;
+                // Actualitzem la textura de l'icona
+                iconBtn.getStyle().imageUp = new TextureRegionDrawable(new TextureRegion(iconTextures[currentIconIndex]));
             }
         });
 
         TextField nameField = new TextField("Nickname", skin);
-        nameField.setHeight(150);
-        nameField.setWidth(575);
-        nameField.setPosition(425, 1200);
-        nameField.getStyle().font.getData().setScale(4);
+        nameField.setHeight(50);
+        nameField.setWidth(222);
+        nameField.setPosition(80, 340);
 
         TextField emailField = new TextField("Email", skin);
-        emailField.setHeight(150);
-        emailField.setWidth(575);
-        emailField.setPosition(425, 950);
-        emailField.getStyle().font.getData().setScale(4);
+        emailField.setHeight(50);
+        emailField.setWidth(222);
+        emailField.setPosition(80, 260);
 
         TextField tfnField = new TextField("Telefon", skin);
-        tfnField.setHeight(150);
-        tfnField.setWidth(575);
-        tfnField.setPosition(425, 700);
-        tfnField.getStyle().font.getData().setScale(4);
+        tfnField.setHeight(50);
+        tfnField.setWidth(222);
+        tfnField.setPosition(80, 180);
 
         TextButton saveBtn = new TextButton("Desar canvis", skin);
-        saveBtn.setPosition(425, 175);
-        saveBtn.setHeight(250);
-        saveBtn.setWidth(575);
+        saveBtn.setPosition(80, 45);
+        saveBtn.setHeight(75);
+        saveBtn.setWidth(222);
+
+        TextButton returnBtn = new TextButton("<", skin);
+        returnBtn.setPosition(20, 740);
+        returnBtn.setHeight(40);
+        returnBtn.setWidth(40);
+
+        returnBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                game.setScreen(new MainMenuScreen(game));
+                dispose();
+            }
+        });
 
         // Comprovem que tots els TextFields continguin text
         if (!nameField.getText().isEmpty() && !emailField.getText().isEmpty()  && !tfnField.getText().isEmpty()) {
@@ -125,7 +132,7 @@ public class ProfileScreen implements Screen {
                     String name = nameField.getText();
                     String email = emailField.getText();
                     String tfn = tfnField.getText();
-                    String avatar = null;
+                    String avatar;
 
                     Texture icon = iconTextures[currentIconIndex];
                     Pixmap pixmap = new Pixmap(icon.getWidth(), icon.getHeight(), Pixmap.Format.RGBA4444);
@@ -142,18 +149,29 @@ public class ProfileScreen implements Screen {
                     avatar = encoder.encodeToString(imgBytes);
 
                     // Creem el cos de la petició
-                    String requestBody = "{" +
-                                            "\"nickname\": \"[NICKNAME]\", " +
-                                            "\"email\": \"[EMAIL]\", " +
-                                            "\"phoneNumber\": \"[PHONENUMBER]\", " +
-                                            "\"avatar\": \"[AVATAR]\"" +
-                                         "}";
+                    requestBody = "{" +
+                                  "\"nickname\": \"[NICKNAME]\", " +
+                                  "\"email\": \"[EMAIL]\", " +
+                                  "\"phoneNumber\": \"[PHONENUMBER]\", " +
+                                  "\"avatar\": \"[AVATAR]\"" +
+                                  "}";
                     requestBody = requestBody.replace("[NICKNAME]", name);
                     requestBody = requestBody.replace("[EMAIL]", email);
                     requestBody = requestBody.replace("[PHONENUMBER]", tfn);
                     requestBody = requestBody.replace("[AVATAR]", avatar);
-                    System.out.println(requestBody);
 
+                    /*
+                    // Creem un arxiu JSON amb el cos de la petició
+                    FileHandle jsonFile = Gdx.files.internal("profile.json");
+                    jsonFile.writeString(requestBody, false);
+                    System.out.println("JSON file created:\n" + jsonFile.path());
+                    */
+
+                    // Tornem al menú principal
+                    game.setScreen(new MainMenuScreen(game));
+                    dispose();
+
+                    /*
                     // Creem una petició HTTP
                     HttpRequest httpRequest = new HttpRequest(HttpMethods.POST);
                     httpRequest.setUrl("https://roscodrom5.ieti.site/api/user/register");
@@ -167,6 +185,12 @@ public class ProfileScreen implements Screen {
                             // Comprovem si la petició s'ha enregistat amb éxit
                             int statusCode = httpResponse.getStatus().getStatusCode();
                             if (statusCode == 200) {
+                                // Creem un arxiu JSON amb el cos de la petició
+                                FileHandle file = Gdx.files.internal("profile.json");
+                                file.writeString(requestBody, false);
+                                System.out.println("JSON file created: " + file.path());
+
+                                // Tornem al menú principal
                                 game.setScreen(new MainMenuScreen(game));
                                 dispose();
                             } else {
@@ -182,11 +206,13 @@ public class ProfileScreen implements Screen {
                             System.out.println("Request cancelled");
                         }
                     });
+                    */
                 }
             });
         }
 
-        stage.addActor(iconButton);
+        stage.addActor(returnBtn);
+        stage.addActor(iconBtn);
         stage.addActor(nameField);
         stage.addActor(emailField);
         stage.addActor(tfnField);
@@ -202,7 +228,7 @@ public class ProfileScreen implements Screen {
 
         game.batch.begin();
         game.batch.draw(background, 0, 0);
-        game.font.draw(game.batch, "Perfil", 150, 700);
+        game.font.draw(game.batch, "Perfil", 140, 685);
         game.batch.end();
 
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));

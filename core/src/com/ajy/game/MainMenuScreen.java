@@ -12,8 +12,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
-import java.io.File;
-
 public class MainMenuScreen implements Screen {
 	final Roscodrom game;
 	OrthographicCamera camera;
@@ -61,7 +59,7 @@ public class MainMenuScreen implements Screen {
 		singleplayerBtn.addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-				game.setScreen(new SinglePlayerScreen(game));
+				game.setScreen(new SinglePlayerScreen(game, skin, camera));
             	dispose();
 			}
 		});
@@ -69,11 +67,11 @@ public class MainMenuScreen implements Screen {
 		multiplayerBtn.addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-				if (new File("profile.json").exists()) {
-					game.setScreen(new MultiPlayerScreen(game));
+				if (Gdx.files.internal("profile.json").readString().isEmpty()) {
+					game.setScreen(new ProfileScreen(game, skin, camera));
 					dispose();
 				} else {
-					game.setScreen(new ProfileScreen(game));
+					game.setScreen(new MainMenuScreen(game));
 					dispose();
 				}
 			}
@@ -82,7 +80,7 @@ public class MainMenuScreen implements Screen {
 		coliseumBtn.addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-				game.setScreen(new ColiseumScreen(game));
+				game.setScreen(new ColiseumScreen(game, skin, camera));
 				dispose();
 			}
 		});
@@ -90,7 +88,7 @@ public class MainMenuScreen implements Screen {
 		optionsBtn.addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-				game.setScreen(new OptionsScreen(game));
+				game.setScreen(new OptionsScreen(game, skin, camera));
 				dispose();
 			}
 		});
@@ -98,7 +96,7 @@ public class MainMenuScreen implements Screen {
 		profileBtn.addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-				game.setScreen(new ProfileScreen(game));
+				game.setScreen(new ProfileScreen(game, skin, camera));
 				dispose();
 			}
 		});
