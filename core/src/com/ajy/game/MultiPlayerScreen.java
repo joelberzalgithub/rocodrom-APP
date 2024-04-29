@@ -56,7 +56,7 @@ public class MultiPlayerScreen implements Screen {
 
         game.batch.begin();
         game.batch.draw(background, 0, 0);
-        game.font.draw(game.batch, "Partida multijugador", 130, 400);
+        game.font.draw(game.batch, "Partida multijugador", 120, 400);
         game.batch.end();
 
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));

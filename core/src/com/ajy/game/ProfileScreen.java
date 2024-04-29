@@ -23,9 +23,7 @@ import com.badlogic.gdx.Net.HttpResponse;
 import com.badlogic.gdx.Net.HttpResponseListener;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.Base64Coder;
 
-import java.io.File;
 import java.util.Base64;
 
 public class ProfileScreen implements Screen {
@@ -52,16 +50,18 @@ public class ProfileScreen implements Screen {
 
     private String avatarToBase64() {
         Texture icon = iconTextures[currentIconIndex];
-        Pixmap pixmap = new Pixmap(icon.getWidth(), icon.getHeight(), Pixmap.Format.RGBA8888);
+        Pixmap pixmap = new Pixmap(icon.getWidth(), icon.getHeight(), Pixmap.Format.RGBA4444);
         FileHandle file = FileHandle.tempFile("tempAvatar");
         try {
             PixmapIO.writePNG(file, pixmap);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
+
         pixmap.dispose();
         byte[] imgBytes = file.readBytes();
-        return Base64Coder.encodeLines(imgBytes);
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        return encoder.encodeToString(imgBytes);
     }
 
     @Override
@@ -132,46 +132,21 @@ public class ProfileScreen implements Screen {
                     String name = nameField.getText();
                     String email = emailField.getText();
                     String tfn = tfnField.getText();
-                    String avatar;
-
-                    Texture icon = iconTextures[currentIconIndex];
-                    Pixmap pixmap = new Pixmap(icon.getWidth(), icon.getHeight(), Pixmap.Format.RGBA4444);
-                    FileHandle file = FileHandle.tempFile("tempAvatar");
-                    try {
-                        PixmapIO.writePNG(file, pixmap);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    pixmap.dispose();
-                    byte[] imgBytes = file.readBytes();
-                    Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
-                    avatar = encoder.encodeToString(imgBytes);
+                    String avatar = avatarToBase64();
 
                     // Creem el cos de la petició
                     requestBody = "{" +
-                                  "\"nickname\": \"[NICKNAME]\", " +
-                                  "\"email\": \"[EMAIL]\", " +
-                                  "\"phoneNumber\": \"[PHONENUMBER]\", " +
-                                  "\"avatar\": \"[AVATAR]\"" +
-                                  "}";
+                            "\"nickname\": \"[NICKNAME]\", " +
+                            "\"email\": \"[EMAIL]\", " +
+                            "\"phoneNumber\": \"[PHONENUMBER]\", " +
+                            "\"avatar\": \"[AVATAR]\"" +
+                            "}";
                     requestBody = requestBody.replace("[NICKNAME]", name);
                     requestBody = requestBody.replace("[EMAIL]", email);
                     requestBody = requestBody.replace("[PHONENUMBER]", tfn);
                     requestBody = requestBody.replace("[AVATAR]", avatar);
+                    System.out.println(requestBody);
 
-                    /*
-                    // Creem un arxiu JSON amb el cos de la petició
-                    FileHandle jsonFile = Gdx.files.internal("profile.json");
-                    jsonFile.writeString(requestBody, false);
-                    System.out.println("JSON file created:\n" + jsonFile.path());
-                    */
-
-                    // Tornem al menú principal
-                    game.setScreen(new MainMenuScreen(game));
-                    dispose();
-
-                    /*
                     // Creem una petició HTTP
                     HttpRequest httpRequest = new HttpRequest(HttpMethods.POST);
                     httpRequest.setUrl("https://roscodrom5.ieti.site/api/user/register");
@@ -184,15 +159,31 @@ public class ProfileScreen implements Screen {
                         public void handleHttpResponse(HttpResponse httpResponse) {
                             // Comprovem si la petició s'ha enregistat amb éxit
                             int statusCode = httpResponse.getStatus().getStatusCode();
+                            System.out.println(statusCode);
                             if (statusCode == 200) {
-                                // Creem un arxiu JSON amb el cos de la petició
-                                FileHandle file = Gdx.files.internal("profile.json");
-                                file.writeString(requestBody, false);
-                                System.out.println("JSON file created: " + file.path());
+                                Gdx.app.postRunnable(() -> {
+                                    // Tornem al menú principal
+                                    game.setScreen(new MainMenuScreen(game));
+                                    dispose();
+                                });
 
-                                // Tornem al menú principal
-                                game.setScreen(new MainMenuScreen(game));
-                                dispose();
+                                // Inserim el cos de la petició dins d'un arxiu JSON
+                                try {
+                                    String file = "profile.json";
+                                    FileHandle fileHandle = Gdx.files.local(file);
+                                    if (!fileHandle.exists()) {
+                                        if (!fileHandle.file().createNewFile()) {
+                                            System.out.println("Failed to create file: " + file);
+                                            return;
+                                        }
+                                    }
+                                    fileHandle.writeString(requestBody, false);
+                                    System.out.println("Request Body successfully inserted into " + file);
+
+                                } catch (Exception e) {
+                                    System.out.println(e.getMessage());
+                                }
+
                             } else {
                                 System.out.println("Error registering user: " + httpResponse.getResultAsString());
                             }
@@ -206,7 +197,6 @@ public class ProfileScreen implements Screen {
                             System.out.println("Request cancelled");
                         }
                     });
-                    */
                 }
             });
         }

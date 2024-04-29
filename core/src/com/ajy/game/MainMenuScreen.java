@@ -69,11 +69,11 @@ public class MainMenuScreen implements Screen {
 			multiplayerBtn.addListener(new ClickListener() {
 				@Override
 				public void clicked(InputEvent event, float x, float y) {
-					if (Gdx.files.internal("profile.json").readString().isEmpty()) {
+					if (!Gdx.files.local("profile.json").exists()) {
 						game.setScreen(new ProfileScreen(game, skin, camera));
 						dispose();
 					} else {
-						game.setScreen(new MainMenuScreen(game));
+						game.setScreen(new MultiPlayerScreen(game, skin, camera));
 						dispose();
 					}
 				}
