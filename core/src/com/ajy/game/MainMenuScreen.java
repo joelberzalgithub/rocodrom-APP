@@ -17,7 +17,9 @@ public class MainMenuScreen implements Screen {
 	OrthographicCamera camera;
 	Texture background;
 	Stage stage;
+	private boolean listenersEnabled = true;
 	Skin skin;
+
 
 	public MainMenuScreen(final Roscodrom game) {
 		this.game = game;
@@ -55,52 +57,52 @@ public class MainMenuScreen implements Screen {
 		profileBtn.setPosition(125, 50);
 		profileBtn.setHeight(75);
 		profileBtn.setWidth(200);
-
-		singleplayerBtn.addListener(new ClickListener() {
-			@Override
-			public void clicked(InputEvent event, float x, float y) {
-				game.setScreen(new SinglePlayerScreen(game, skin, camera));
-            	dispose();
-			}
-		});
-
-		multiplayerBtn.addListener(new ClickListener() {
-			@Override
-			public void clicked(InputEvent event, float x, float y) {
-				if (Gdx.files.internal("profile.json").readString().isEmpty()) {
-					game.setScreen(new ProfileScreen(game, skin, camera));
-					dispose();
-				} else {
-					game.setScreen(new MainMenuScreen(game));
+		if (listenersEnabled) {
+			singleplayerBtn.addListener(new ClickListener() {
+				@Override
+				public void clicked(InputEvent event, float x, float y) {
+					game.setScreen(new SinglePlayerScreen(game,skin));
 					dispose();
 				}
-			}
-		});
+			});
 
-		coliseumBtn.addListener(new ClickListener() {
-			@Override
-			public void clicked(InputEvent event, float x, float y) {
-				game.setScreen(new ColiseumScreen(game, skin, camera));
-				dispose();
-			}
-		});
+			multiplayerBtn.addListener(new ClickListener() {
+				@Override
+				public void clicked(InputEvent event, float x, float y) {
+					if (Gdx.files.internal("profile.json").readString().isEmpty()) {
+						game.setScreen(new ProfileScreen(game, skin, camera));
+						dispose();
+					} else {
+						game.setScreen(new MainMenuScreen(game));
+						dispose();
+					}
+				}
+			});
 
-		optionsBtn.addListener(new ClickListener() {
-			@Override
-			public void clicked(InputEvent event, float x, float y) {
-				game.setScreen(new OptionsScreen(game, skin, camera));
-				dispose();
-			}
-		});
+			coliseumBtn.addListener(new ClickListener() {
+				@Override
+				public void clicked(InputEvent event, float x, float y) {
+					game.setScreen(new ColiseumScreen(game, skin, camera));
+					dispose();
+				}
+			});
 
-		profileBtn.addListener(new ClickListener() {
-			@Override
-			public void clicked(InputEvent event, float x, float y) {
-				game.setScreen(new ProfileScreen(game, skin, camera));
-				dispose();
-			}
-		});
+			optionsBtn.addListener(new ClickListener() {
+				@Override
+				public void clicked(InputEvent event, float x, float y) {
+					game.setScreen(new OptionsScreen(game, skin, camera));
+					dispose();
+				}
+			});
 
+			profileBtn.addListener(new ClickListener() {
+				@Override
+				public void clicked(InputEvent event, float x, float y) {
+					game.setScreen(new ProfileScreen(game, skin, camera));
+					dispose();
+				}
+			});
+		}
 		stage.addActor(singleplayerBtn);
 		stage.addActor(multiplayerBtn);
 		stage.addActor(coliseumBtn);
@@ -122,6 +124,10 @@ public class MainMenuScreen implements Screen {
 		stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
 		stage.draw();
 	}
+	public void setListenersEnabled(boolean enabled) {
+		listenersEnabled = enabled;
+	}
+
 
 	@Override
 	public void resize(int width, int height) {
