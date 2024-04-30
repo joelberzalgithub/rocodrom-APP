@@ -221,19 +221,20 @@ public class SinglePlayerScreen extends ScreenAdapter {
                 }
                 Boolean encontrado=binarySearch(palabraMontado);
                 if (encontrado){
-
                     goodSound.play();
-                    for (String[] i:puntuajeReglas.keySet()){
-                        String iniciales="";
-                        for (String s:i){
-                            iniciales+=s;
-                        }
 
-                        if ( iniciales.contains(clickedLetters.get(0)+"")){
-
-                            Puntuaje+=puntuajeReglas.get(i);
+                    for (String i : clickedLetters){
+                        for (String[] j:puntuajeReglas.keySet()){
+                            String iniciales="";
+                            for (String s:j){
+                                iniciales+=s;
+                            }
+                            if ( iniciales.contains(i)){
+                                Puntuaje+=puntuajeReglas.get(j);
+                            }
                         }
                     }
+
                     clickedLetters = new ArrayList<>();
                 }else{
                     badSound.play();
