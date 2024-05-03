@@ -13,11 +13,17 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import java.util.ArrayList;
@@ -57,7 +63,8 @@ public class SinglePlayerScreen extends ScreenAdapter {
     private static final float HITBOX_RADIUS = 150f; // Radio del hitbox para agrandar el área de detección
 
     private List<String> clickedLetters = new ArrayList<>();
-
+     int countdownSeconds = 60;
+    boolean listener_activo=true;
     public SinglePlayerScreen(final Roscodrom game,Skin skin) {
         this.game = game;
         this.skin = skin;
@@ -110,6 +117,23 @@ public class SinglePlayerScreen extends ScreenAdapter {
         }
         loadLetterTextures();
         loadClickedTextures();
+        Timer.schedule(new Timer.Task() {
+            @Override
+            public void run() {
+                // Reducir el tiempo restante
+                countdownSeconds--;
+
+                // Mostrar el tiempo restante
+                System.out.println("Tiempo restante: " + countdownSeconds + " segundos");
+
+                // Comprobar si el temporizador ha llegado a cero
+                if (countdownSeconds <= 0) {
+                    System.out.println("¡El temporizador ha terminado!");
+                    this.cancel(); // Detener el temporizador
+                    showTimeoutDialog();
+                }
+            }
+        }, 1, 1);
         //System.out.println(dicc);
 
     }
@@ -143,29 +167,30 @@ public class SinglePlayerScreen extends ScreenAdapter {
             letterTextures[i] = new Texture(Gdx.files.internal(texturePath));
         }
     }
+    /*
     private Texture resizeTexture(Texture originalTexture) {
-        // Calcula el nuevo ancho y altura reduciendo a la mitad
-        int newWidth = originalTexture.getWidth() / 2+50;
-        int newHeight = originalTexture.getHeight() / 2+50;
+        // Calculate the new width and height
+        int newWidth = Math.max(originalTexture.getWidth() / 2 + 50, 1); // Ensure non-zero width
+        int newHeight = Math.max(originalTexture.getHeight() / 2 + 50, 1); // Ensure non-zero height
 
-        // Crea una nueva textura con el nuevo tamaño
-        Texture resizedTexture = new Texture(newWidth, newHeight, originalTexture.getTextureData().getFormat());
+        // Create a new Pixmap to hold the resized texture data
+        Pixmap originalPixmap = originalTexture.getTextureData().consumePixmap();
+        Pixmap resizedPixmap = new Pixmap(newWidth, newHeight, originalPixmap.getFormat());
 
-        // Configura los filtros de textura para mantener la calidad
-        resizedTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        // Scale the original Pixmap to the new size
+        resizedPixmap.drawPixmap(originalPixmap,
+                0, 0, originalPixmap.getWidth(), originalPixmap.getHeight(),
+                0, 0, newWidth, newHeight);
 
-        // Dibuja la textura original en la nueva textura redimensionada
-        Pixmap pixmap = new Pixmap(originalTexture.getWidth(), originalTexture.getHeight(), Pixmap.Format.RGBA8888);
-        originalTexture.getTextureData().prepare();
-        pixmap.drawPixmap(originalTexture.getTextureData().consumePixmap(), 0, 0);
-        Pixmap resizedPixmap = new Pixmap(newWidth, newHeight, pixmap.getFormat());
-        resizedPixmap.drawPixmap(pixmap, 0, 0, originalTexture.getWidth(), originalTexture.getHeight(), 0, 0, newWidth, newHeight);
-        resizedTexture.draw(resizedPixmap, 0, 0);
-        pixmap.dispose();
-        resizedPixmap.dispose();
+        // Create a new Texture from the resized Pixmap
+        Texture resizedTexture = new Texture(resizedPixmap);
+
+        // Dispose the original Pixmap
+        originalPixmap.dispose();
 
         return resizedTexture;
-    }
+    }*/
+
 
     private void loadClickedTextures() {
         clickedTextures = new Texture[NUM_LETTERS];
@@ -177,22 +202,32 @@ public class SinglePlayerScreen extends ScreenAdapter {
     }
     @Override
     public void show() {
-        returnBtn = new TextButton("<", skin);
-        returnBtn.setPosition(20, 500);
+        TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
 
+        BitmapFont font = new BitmapFont(); // Esto crea un BitmapFont por defecto
+
+        textButtonStyle.font = font;
+        textButtonStyle.font.getData().setScale(7f, 7f);
+
+
+        returnBtn = new TextButton("<",textButtonStyle);
+        returnBtn.setPosition(20, 500);
         returnBtn.setHeight(200);
         returnBtn.setWidth(200);
 
         returnBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                game.setScreen(new MainMenuScreen(game));
-                dispose();
+                if ( listener_activo){
+                    game.setScreen(new MainMenuScreen(game));
+                    dispose();
+                }
+
             }
         });
         stage.addActor(returnBtn);
 
-        CleanBtn = new TextButton("XXX", skin);
+        CleanBtn = new TextButton("X", textButtonStyle);
         CleanBtn.setPosition(1200, 500);
 
         CleanBtn.setHeight(200);
@@ -201,12 +236,15 @@ public class SinglePlayerScreen extends ScreenAdapter {
         CleanBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                clickedLetters = new ArrayList<>();
+                if (listener_activo){
+                    clickedLetters = new ArrayList<>();
+                }
+
             }
         });
         stage.addActor(CleanBtn);
 
-        confirmBtn = new TextButton(".................", skin);
+        confirmBtn = new TextButton("Confirmar", textButtonStyle);
         confirmBtn.setPosition(500, 500);
 
         confirmBtn.setHeight(200);
@@ -215,32 +253,36 @@ public class SinglePlayerScreen extends ScreenAdapter {
         confirmBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                String palabraMontado="";
-                for (String i : clickedLetters){
-                    palabraMontado+=i+"";
-                }
-                Boolean encontrado=binarySearch(palabraMontado);
-                if (encontrado){
-                    goodSound.play();
-
+                if (listener_activo){
+                    String palabraMontado="";
                     for (String i : clickedLetters){
-                        for (String[] j:puntuajeReglas.keySet()){
-                            String iniciales="";
-                            for (String s:j){
-                                iniciales+=s;
-                            }
-                            if ( iniciales.contains(i)){
-                                Puntuaje+=puntuajeReglas.get(j);
+                        palabraMontado+=i+"";
+                    }
+                    Boolean encontrado=binarySearch(palabraMontado);
+                    if (encontrado){
+                        goodSound.play();
+
+                        for (String i : clickedLetters){
+                            for (String[] j:puntuajeReglas.keySet()){
+                                String iniciales="";
+                                for (String s:j){
+                                    iniciales+=s;
+                                }
+                                if ( iniciales.contains(i)){
+                                    Puntuaje+=puntuajeReglas.get(j);
+                                }
                             }
                         }
+
+                        clickedLetters = new ArrayList<>();
+                    }else{
+                        badSound.play();
                     }
 
-                    clickedLetters = new ArrayList<>();
-                }else{
-                    badSound.play();
                 }
 
             }
+
         });
         stage.addActor(confirmBtn);
     }
@@ -258,7 +300,6 @@ public class SinglePlayerScreen extends ScreenAdapter {
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
         for (int i = 0; i < alphabetFinal.size(); i++) {
-            returnBtn.setText(alphabetFinal.get(0)+"");
             String letter = alphabetFinal.get(i);
             Vector2 position = letterPositions.get(i);
             Texture texture = clickedLetters.contains(letter) ? clickedTextures[i] : letterTextures[i];
@@ -269,10 +310,11 @@ public class SinglePlayerScreen extends ScreenAdapter {
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
         stage.draw();
         batch.begin();
-        font.draw(batch, "Puntuaje: " + Puntuaje, 20, Gdx.graphics.getHeight() - 20);
+        font.draw(batch, "Punts: " + Puntuaje, 20, Gdx.graphics.getHeight() - 10);
+        font.draw(batch,   ""+countdownSeconds, 1200, Gdx.graphics.getHeight() - 10);
         batch.end();
         // Check for clicks
-        if (Gdx.input.justTouched()) {
+        if (Gdx.input.justTouched() && listener_activo) {
             float clickX = Gdx.input.getX();
             float clickY = Gdx.graphics.getHeight() - Gdx.input.getY();
 
@@ -298,8 +340,8 @@ public class SinglePlayerScreen extends ScreenAdapter {
         float totalWordWidth = clickedLetters.size() * 10; // Ancho total de la palabra
         float startX = (Gdx.graphics.getWidth() - totalWordWidth) / 100f; // Alineación centrada
         float y = Gdx.graphics.getHeight() / 7f + 2200;
-        float letterSpacing = 180f; // Ajustar el espacio entre letras
-        float rowPadding = -80f; // Espacio vertical entre filas
+        float letterSpacing = 250f; // Ajustar el espacio entre letras
+        float rowPadding = 0f; // Espacio vertical entre filas
         int lettersInCurrentRow = 0; // Rastrea cuántas letras se han dibujado en la fila actual
         for (String letter : clickedLetters) {
             int index=-1;
@@ -312,12 +354,13 @@ public class SinglePlayerScreen extends ScreenAdapter {
             char ch = (letter+"").charAt(0);
             if (index >= 0 && index < NUM_LETTERS) {
                 Texture texture = clickedLetters.contains(ch) ? clickedTextures[index] : letterTextures[index];
-                batch.draw(resizeTexture(texture), startX, y);
+                //batch.draw(resizeTexture(texture), startX, y);
+                batch.draw((texture), startX, y);
                 startX += letterSpacing; // Espacio entre letras
 
                 // Verificar si se ha completado la fila actual
                 lettersInCurrentRow++;
-                if (lettersInCurrentRow >= 8) {
+                if (lettersInCurrentRow >= 6) {
                     // Reiniciar startX para la siguiente fila
                     startX = (Gdx.graphics.getWidth() - totalWordWidth) / 2000f;
                     // Ajustar la posición y para la siguiente fila
@@ -352,8 +395,43 @@ public class SinglePlayerScreen extends ScreenAdapter {
         return false;
     }
 
+    private void showTimeoutDialog() {
+        setListenersEnabled(false);
+        Dialog timeoutDialog = new Dialog("", skin);
 
+        // Configura el estilo del texto del diálogo con un tamaño de fuente más grande
+        Label.LabelStyle labelStyle = new Label.LabelStyle();
+        labelStyle.font = skin.getFont("default-font"); // Usa la fuente por defecto
+        labelStyle.font.getData().setScale(5); // Ajusta el tamaño de la fuente (2 veces más grande)
 
+        // Crea un nuevo objeto Label con el estilo configurado
+        Label messageLabel = new Label("S'ha terminat el temps !!\nTens total de "+Puntuaje+" punts", labelStyle);
+
+        // Agrega el objeto Label al contenido del diálogo
+        timeoutDialog.getContentTable().add(messageLabel).center().pad(20);
+
+        // Agrega un botón para cerrar el diálogo
+        timeoutDialog.button("Aceptar", true);
+
+        // Ajusta el tamaño del diálogo
+        timeoutDialog.setSize(1200, 2000);
+        // Obtener el botón "Aceptar" del diálogo
+
+        // Establece la posición del diálogo
+        timeoutDialog.setPosition(Gdx.graphics.getWidth() / 2 - timeoutDialog.getWidth() / 2,
+                Gdx.graphics.getHeight() / 2 - timeoutDialog.getHeight() / 2);
+
+        // Agrega el diálogo al escenario para que se muestre
+        timeoutDialog.getButtonTable().getCells().get(0).getActor().addListener(new InputListener() {
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                setListenersEnabled(true);
+                game.setScreen(new MainMenuScreen(game));
+                dispose();
+            }
+        });
+        stage.addActor(timeoutDialog);
+    }
 
     @Override
     public void dispose() {
@@ -367,5 +445,9 @@ public class SinglePlayerScreen extends ScreenAdapter {
         for (Texture texture : clickedTextures) {
             texture.dispose();
         }
+    }
+
+    public void setListenersEnabled(boolean enabled) {
+        listener_activo = enabled;
     }
 }

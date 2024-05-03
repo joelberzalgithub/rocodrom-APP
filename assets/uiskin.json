@@ -2,6 +2,10 @@
 	"com.badlogic.gdx.graphics.g2d.BitmapFont": {
 		"default-font": {
 			"file": "default.fnt"
+		},
+		"big-font": {
+			"file": "default.fnt",
+			"font-size": 100
 		}
 	},
 	"com.badlogic.gdx.graphics.Color": {
@@ -23,13 +27,10 @@
 			"up": "default-round", "font": "default-font",
 			"fontColor": "white"
 		},
-		"toggle": {
+		"play": {
 			"down": "default-round-down",
-			"up": "default-round",
-			"checked": "default-round-down",
-			"font": "default-font",
-			"fontColor": "white",
-			"downFontColor": "red"
+			"up": "default-round", "font": "big-font",
+			"fontColor": "white"
 		}
 	},
 	"com.badlogic.gdx.scenes.scene2d.ui.ScrollPane$ScrollPaneStyle": {
@@ -38,6 +39,7 @@
 			"background": "default-rect", "hScroll": "default-scroll", "vScrollKnob": "default-round-large"
 		}
 	},
+
 	"com.badlogic.gdx.scenes.scene2d.ui.SelectBox$SelectBoxStyle": {
 		"default": {
 			"font": "default-font", "fontColor": "white", "background": "default-select",

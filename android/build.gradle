@@ -1,7 +1,7 @@
 android {
     namespace "com.ajy.game"
-    buildToolsVersion "34.0.0"
-    compileSdkVersion 34
+    buildToolsVersion "33.0.0"
+    compileSdkVersion 33
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -19,8 +19,8 @@ android {
     }
     defaultConfig {
         applicationId "com.ajy.game"
-        minSdkVersion 34
-        targetSdkVersion 34
+        minSdkVersion 33
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
     }
