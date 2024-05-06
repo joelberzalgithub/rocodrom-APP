@@ -221,6 +221,7 @@ public class SinglePlayerScreen extends ScreenAdapter {
                 }
                 Boolean encontrado=binarySearch(palabraMontado);
                 if (encontrado){
+
                     goodSound.play();
                     for (String[] i:puntuajeReglas.keySet()){
                         String iniciales="";
@@ -233,6 +234,7 @@ public class SinglePlayerScreen extends ScreenAdapter {
                             Puntuaje+=puntuajeReglas.get(i);
                         }
                     }
+                    clickedLetters = new ArrayList<>();
                 }else{
                     badSound.play();
                 }
