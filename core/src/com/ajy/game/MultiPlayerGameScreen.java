@@ -50,7 +50,10 @@ public class MultiPlayerGameScreen extends ScreenAdapter {
     private Sound badSound;
     private BitmapFont font;
     TextButton returnBtn,confirmBtn,CleanBtn;
-  
+    String[] alphabet = {
+            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+            "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
+    };
     List<String>  alphabetFinal=new ArrayList<>();
     int Puntuaje=0;
     private Texture[] clickedTextures;
@@ -60,12 +63,12 @@ public class MultiPlayerGameScreen extends ScreenAdapter {
     private static final float HITBOX_RADIUS = 150f; // Radio del hitbox para agrandar el área de detección
 
     private List<String> clickedLetters = new ArrayList<>();
-     int countdownSeconds = -1;
+    int countdownSeconds = 60;
     boolean listener_activo=true;
-    public MultiPlayerGameScreen(final Roscodrom game,Skin skin) {
+    public MultiPlayerGameScreen(final Roscodrom game,Skin skin,OrthographicCamera camera) {
         this.game = game;
         this.skin = skin;
-
+        this.camera=camera;
         mainMenuScreen = new MainMenuScreen(game);
         mainMenuScreen.setListenersEnabled(false);
 
@@ -78,31 +81,17 @@ public class MultiPlayerGameScreen extends ScreenAdapter {
         letterPositions = new ArrayList<>();
         letterHitboxes = new Circle[NUM_LETTERS];
         generateAlphabetPositions();
-        
-        FileHandle fileHandle = Gdx.files.internal("diccs/dicc.txt");
-        dicc= fileHandle.readString().split("\n");
         goodSound = Gdx.audio.newSound(Gdx.files.internal("sounds/correct.mp3"));
         badSound = Gdx.audio.newSound(Gdx.files.internal("sounds/wrong.mp3"));
-        // Agregar elementos al mapa
-        puntuajeReglas.put(new String[]{"E", "A", "I", "O", "S", "N", "R", "L"},5);
-        puntuajeReglas.put(new String[]{"T", "U", "D", "C"},7);
-        puntuajeReglas.put( new String[]{"M", "P", "B", "V", "G"},10);
-        puntuajeReglas.put( new String[]{"Y", "H", "Q"},13);
-        puntuajeReglas.put( new String[]{"F", "J", "Z"},17);
-        puntuajeReglas.put( new String[]{"X", "K", "W"},20);
         font = new BitmapFont();
         font.setColor(Color.WHITE);
         font.getData().setScale(10);
         Set<String> selectedLetters = new HashSet<>();
         Random random = new Random();
-
-        //Conseguir alphabet del servidor
-        for (String letter : selectedLetters) {
-            alphabetFinal.add(letter);
-        }
-        ///
+        alphabetFinal=MultiPlayerScreen.alphabetFinal;
         loadLetterTextures();
         loadClickedTextures();
+
         //System.out.println(dicc);
 
     }
@@ -133,7 +122,6 @@ public class MultiPlayerGameScreen extends ScreenAdapter {
             letterTextures[i] = new Texture(Gdx.files.internal(texturePath));
         }
     }
-
 
     private void loadClickedTextures() {
         clickedTextures = new Texture[NUM_LETTERS];
@@ -203,7 +191,6 @@ public class MultiPlayerGameScreen extends ScreenAdapter {
                     }
                     Boolean encontrado=binarySearch(palabraMontado);
                     if (encontrado){
-                        //WEBSOCKET MANDAR PUNTOS
                         goodSound.play();
 
                         for (String i : clickedLetters){
@@ -233,13 +220,6 @@ public class MultiPlayerGameScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
-        //WEBSOCKET CONSEGUIR TIEMPO RESTANTE
-        //........
-        ///
-        
-        ///WEBSOCKET RECIBIR PALABRAS CORRECTAS DE OTRO USUARIO:
-        //ToastNotification notification = new ToastNotification("Mensaje de notificación", 2);
-        ///
         Gdx.gl.glClearColor(0, 0, 0.2f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -400,34 +380,5 @@ public class MultiPlayerGameScreen extends ScreenAdapter {
 
     public void setListenersEnabled(boolean enabled) {
         listener_activo = enabled;
-    }
-}
-class ToastNotification extends Actor {
-    private String message;
-    private BitmapFont font;
-    private float duration;
-    private float timer;
-
-    public ToastNotification(String message, float duration) {
-        this.message = message;
-        this.font = new BitmapFont();
-        this.font.setColor(Color.WHITE);
-        this.duration = duration;
-        this.timer = 0;
-        // Obtener el tamaño del texto usando getData().getBounds()
-    }
-
-    @Override
-    public void act(float delta) {
-        super.act(delta);
-        timer += delta;
-        if (timer >= duration) {
-            remove(); // Remove the notification from the stage
-        }
-    }
-
-    public void draw(SpriteBatch batch, float parentAlpha) {
-        super.draw(batch, parentAlpha);
-        font.draw(batch, message, getX(), getY() + getHeight());
     }
 }
