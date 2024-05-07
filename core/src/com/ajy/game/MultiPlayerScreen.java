@@ -6,9 +6,9 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.net.Socket;
-import com.badlogic.gdx.net.SocketHints;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -16,20 +16,19 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.github.czyzby.websocket.WebSocket;
-import com.github.czyzby.websocket.WebSocketListener;
-import com.github.czyzby.websocket.WebSockets;
-import com.badlogic.gdx.Net.HttpMethods;
-import com.badlogic.gdx.Net.HttpRequest;
-import com.badlogic.gdx.Net.HttpResponse;
-import com.badlogic.gdx.Net.HttpResponseListener;
-
+import org.json.JSONObject;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+
+import io.socket.client.IO;
+import io.socket.client.Socket;
 
 public class MultiPlayerScreen implements Screen {
     final Roscodrom game;
     Socket socket;
-
+    private BitmapFont font;
     final Skin skin;
     final OrthographicCamera camera;
     float elapsed;
@@ -44,32 +43,13 @@ public class MultiPlayerScreen implements Screen {
         this.camera = camera;
         this.camera.setToOrtho(false, 389, 800);
         background = new Texture(Gdx.files.internal("backgroundGame.jpg"));
+        font = new BitmapFont();
         stage = new Stage(new FitViewport(389, 800, camera));
         Gdx.input.setInputProcessor(stage);
-        String URL="ws://roscodrom5.ieti.site/";
-        socket = Gdx.net.newClientSocket(Net.Protocol.TCP, "roscodrom5.ieti.site", 80,new SocketHints());
-        String message="{\n" +
-                "  \"nickname\": \"usuarioEjemplo\",\n" +
-                "  \"apiKey\": \"c9f2ae7e-3e5d-4f08-a290-5e9f547e3aeb\"\n" +
-                "}";
-        try {
-            socket.getOutputStream().write(message.getBytes());
-            socket.getOutputStream().flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-/*
-        socket.setSendGracefully(false);
-        socket.addListener((WebSocketListener) new WebsocketLSN());
-
-
-        socket.connect();
-        socket.send("{\n" +
-                "  \"nickname\": \"usuarioEjemplo\",\n" +
-                "  \"apiKey\": \"c9f2ae7e-3e5d-4f08-a290-5e9f547e3aeb\"\n" +
-                "}");
-*/
+        String URL="https://roscodrom5.ieti.site";
+        String message="{ nickname: 'nick', apiKey: 'djhiasdhasd-asdasf-adgfagfas234'}";
+        createCommunications(URL);
+        socket.emit("Join",message );
         loading = GifDecoder.loadGIFAnimation(Animation.PlayMode.LOOP, Gdx.files.internal("loading2.gif").read());
     }
 
@@ -83,7 +63,14 @@ public class MultiPlayerScreen implements Screen {
         returnBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                game.setScreen(new MainMenuScreen(game));
+                Map<String, Integer> ranking = new HashMap<>();
+                ranking.put("Juan", 5);
+                ranking.put("María", 3);
+                ranking.put("Carlos", 7);
+                ranking.put("Luisa", 2);
+
+                game.setScreen(new Finish(game,skin,camera,ranking));
+                //game.setScreen(new MainMenuScreen(game));
                 dispose();
             }
         });
@@ -102,8 +89,9 @@ public class MultiPlayerScreen implements Screen {
         game.batch.draw(background, 0, 0);
         //game.font.draw(game.batch, "Partida multijugador", 120, 400);
         game.batch.draw(loading.getKeyFrame(elapsed),100,450);
-        game.batch.end();
 
+        font.draw(game.batch, "S'esta esperant...", 20, 200);
+        game.batch.end();
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
         stage.draw();
     }
@@ -130,10 +118,29 @@ public class MultiPlayerScreen implements Screen {
         background.dispose();
     }
 
+    private void createCommunications(String URL) {
+        try {
+            socket = IO.socket(URL);
+            socket.connect();
+            socket.on(Socket.EVENT_CONNECT, args -> Gdx.app.log("SocketIO", "Connected"));
+            socket.on("update", args -> {
+                JSONObject data = (JSONObject) args[0];
+                System.out.println("SocketIO"+ " Message received: " + data.toString());
+            });
+
+            socket.on("Join", args -> {
+                JSONObject data = (JSONObject) args[0];
+                System.out.println("SocketIO"+ " Message received: " + data.toString());
+            });
+            socket.on(Socket.EVENT_DISCONNECT, args -> Gdx.app.log("SocketIO", "Disconnected"));
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+    }
 
 
 }
-
+/*
 class WebsocketLSN implements WebSocketListener {
 
     @Override
@@ -166,3 +173,5 @@ class WebsocketLSN implements WebSocketListener {
         return false;
     }
 }
+
+*/

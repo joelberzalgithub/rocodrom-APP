@@ -62,6 +62,7 @@ project(":android") {
     configurations { natives }
 
     dependencies {
+        implementation "io.socket:socket.io-client:2.0.0"
         implementation "com.github.MrStahlfelge.gdx-websockets:common:$wsVersion"
         implementation project(":core")
         api "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
@@ -110,6 +111,7 @@ project(":core") {
 
 
     dependencies {
+        implementation "io.socket:socket.io-client:2.0.0"
         implementation "com.github.MrStahlfelge.gdx-websockets:core:$wsVersion"
         api "com.badlogicgames.gdx:gdx:$gdxVersion"
         
